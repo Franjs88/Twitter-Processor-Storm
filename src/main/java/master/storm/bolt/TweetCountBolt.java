@@ -7,12 +7,11 @@ import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
-import backtype.storm.tuple.Values;
+import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import master.storm.tools.Rankings;
-import master.storm.util.NthLastModifiedTimeTracker;
 import master.storm.util.TupleHelpers;
 import org.apache.log4j.Logger;
 
@@ -58,7 +57,11 @@ public class TweetCountBolt extends BaseRichBolt {
     }
     
     private void writeTopKToFile() {
-        System.out.println("TERMINADO: Se ha escrito en el fichero: ");
+        try {
+            topKRankings.writeOrdered();
+        } catch (IOException ex) {
+            java.util.logging.Logger.getLogger(TweetCountBolt.class.getName()).log(Level.SEVERE, null, ex);
+        }
         
     }
 
