@@ -5,6 +5,7 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichSpout;
 import backtype.storm.tuple.Fields;
+import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 import static backtype.storm.utils.Time.LOG;
 import backtype.storm.utils.Utils;
@@ -25,7 +26,6 @@ import java.util.logging.Logger;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import master.storm.tools.Hashtag;
 import org.json.simple.JSONArray;
 
 /**
@@ -41,7 +41,7 @@ public class TwitterSpout extends BaseRichSpout {
     private String countries = null; //"pais1,pais2,pais3"
 
     //Not class atributes
-    private LinkedBlockingQueue<Hashtag> cola = null;
+    private LinkedBlockingQueue<Values> cola = null;
     private SpoutOutputCollector _collector;
     private JSONParser jsonParser;
 
@@ -54,7 +54,7 @@ public class TwitterSpout extends BaseRichSpout {
     @Override
     public void open(Map map, TopologyContext tc, SpoutOutputCollector collector) {
         jsonParser = new JSONParser();
-        cola = new LinkedBlockingQueue<Hashtag>(1000);
+        cola = new LinkedBlockingQueue<Values>();
         _collector = collector;
 
         try {
@@ -80,11 +80,11 @@ public class TwitterSpout extends BaseRichSpout {
 
     @Override
     public void nextTuple() {
-        Hashtag ret = cola.poll();
+        Values ret = cola.poll();
         if (ret == null) {
             Utils.sleep(50);
         } else {
-            _collector.emit(new Values(ret));
+            _collector.emit(ret);
         }
     }
 
@@ -94,7 +94,7 @@ public class TwitterSpout extends BaseRichSpout {
      */
     private void parseTweet(JSONObject tweet) {
         JSONObject place = (JSONObject) tweet.get("place");
-        
+
         if (place != null) {
             String paisOrigen = (String) place.get("country_code");
 
@@ -105,7 +105,7 @@ public class TwitterSpout extends BaseRichSpout {
 
                 long timestamp = convertToTimeStamp(tweet);
 
-            // We filter hashtags.
+                // We filter hashtags.
                 // Generates a tuple for each hashtag in the tweet of the same user
                 JSONObject entities = (JSONObject) user.get("entities");
                 JSONArray hashtags = (JSONArray) entities.get("hashtags");
@@ -114,18 +114,17 @@ public class TwitterSpout extends BaseRichSpout {
                 while (iter.hasNext()) {
                     String palabra = (String) iter.next();
                     try {
-                        cola.put(new Hashtag(usuario, paisOrigen, palabra, timestamp));
-                        System.out.println("####METIDO EN COLA: "
-                                +usuario+", "+paisOrigen+", "+palabra+", "+timestamp);
+                        cola.put(new Values(usuario, paisOrigen, palabra, timestamp));
                     } catch (InterruptedException ex) {
                         Logger.getLogger(TwitterSpout.class.getName()).log(Level.SEVERE, null, ex);
                     }
+                    System.out.println("####METIDO EN COLA: "
+                            + usuario + ", " + paisOrigen + ", " + palabra + ", " + timestamp);
                 }
             } else {
                 System.out.println("Pais no esta en la lista. Filtrado");
             }
-        }
-        else {
+        } else {
             System.out.println("Place is null. Filtrado");
         }
 

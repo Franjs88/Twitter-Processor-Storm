@@ -47,6 +47,7 @@ public class TweetCountBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple tuple) {
+        // After 10 minutes we write to file
         if (TupleHelpers.isTickTuple(tuple)) {
             LOG.debug("Received tick tuple, writing to file and ending");
             writeTopKToFile();
@@ -55,23 +56,22 @@ public class TweetCountBolt extends BaseRichBolt {
             countObjAndAck(tuple);
         }
     }
-    
+
     private void writeTopKToFile() {
         try {
             topKRankings.writeOrdered();
         } catch (IOException ex) {
             java.util.logging.Logger.getLogger(TweetCountBolt.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
     }
 
     private void countObjAndAck(Tuple tuple) {
         String country = (String) tuple.getValue(1);
-        String topic = (String) tuple.getValue(2);        
+        String topic = (String) tuple.getValue(2);
         topKRankings.incrementCount(country, topic);
         collector.ack(tuple);
     }
-    
+
     @Override
     public Map<String, Object> getComponentConfiguration() {
         Map<String, Object> conf = new HashMap<String, Object>();
