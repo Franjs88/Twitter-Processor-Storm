@@ -5,14 +5,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.json.simple.JSONArray;
@@ -64,76 +60,54 @@ public class TwitterAppClient {
     }
 
     // Insert in the queue that nextTuple reads
-    public boolean readTweet(LinkedBlockingQueue<Values> cola) {
-        boolean isNull = true;
+    public ArrayList<Values> readTweet() {
+        ArrayList<Values> values = null;
         try {
             String in;
-            //Leemos mientras lleguen tweets
+            //Leemos
             if ((in = reader.readLine()) != null) {
                 JSONObject tweet = (JSONObject) jsonParser.parse(in);
-                List<Values> values = parseTweet(tweet);
-                // If values is empty, we return false
-                if (values != null) {
-                    for (Values v : values) {
-                        System.out.println("Insertando el cola: " + v.toString());
-                        cola.add(v);
-                    }
-                    isNull = false;
-                }
+                values = parseTweet(tweet);
+                System.out.println("ReadTweet: Values contiene: "+values);
             }
         } catch (IOException | ParseException ex) {
             Logger.getLogger(TwitterAppClient.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return isNull;
+        return values;
     }
 
     /*
      * Inserts in the queue:"cola", one hashtag for each word with # of a
      * same user tweet.
      */
-    private List<Values> parseTweet(JSONObject tweet) {
-        List<Values> ret = new ArrayList<>();
-        JSONObject place = (JSONObject) tweet.get("place");
-        System.out.println(
-                "###########Parseando Place... ");
-        if (place != null) {
-            String paisOrigen = (String) place.get("country_code");
-            System.out.println(
-                    "###########Parseando_PaisOrigen "
-                    + paisOrigen);
-            // We only continue if the country is on the list
-            if (isOnCountryList(paisOrigen)) {
-                System.out.println(
-                        "#############################Pais no es NUll... ");
-                JSONObject user = (JSONObject) tweet.get("user");
-                String usuario = (String) user.get("screen_name");
+    private ArrayList<Values> parseTweet(JSONObject tweet) {
+        ArrayList<Values> list = new ArrayList<>();
+        JSONObject user = (JSONObject) tweet.get("user");
+        String paisOrigen = (String) user.get("lang");
+        // We only continue if the country is on the list
+        if (isOnCountryList(paisOrigen)) {
+            System.out.println("Esta en la lista de paises");
+            // If it is on country list, we get the username
+            String usuario = (String) user.get("screen_name");
 
-                long timestamp = convertToTimeStamp(tweet);
+            // We convert to timestamp the tweet
+            long timestamp = Long.parseLong((String) tweet.get("timestamp_ms"));
+            timestamp = (long) (timestamp * 0.001);
 
-                // We filter hashtags.
-                // Generates a tuple for each hashtag in the tweet of the same user
-                JSONObject entities = (JSONObject) user.get("entities");
+            // We filter hashtags.
+            // Generates a tuple for each hashtag in the tweet of the same user
+            JSONObject entities = (JSONObject) tweet.get("entities");
+            if (entities.containsKey("hashtags")) {
                 JSONArray hashtags = (JSONArray) entities.get("hashtags");
-
-                System.out.println(
-                        "#############################Parseando hashtags... "
-                        + paisOrigen + usuario + timestamp + hashtags);
-
-                Iterator iter = hashtags.iterator();
-                while (iter.hasNext()) {
-                    String palabra = (String) iter.next();
-                    System.out.println("####Va a meter EN COLA: "
-                            + usuario + ", " + paisOrigen + ", " + palabra + ", " + timestamp);
-                    ret.add(new Values(usuario, paisOrigen, palabra, timestamp));
-                    System.out.println("####Metido en cola la palabra" + palabra);
-                }
-            } else {
-                System.out.println("Pais no esta en la lista. Filtrado");
+                // Parse and insert in the queue
+                list = parseHashtags(hashtags, usuario, paisOrigen, timestamp);
             }
+
         } else {
-            System.out.println("Place is null. Filtrado");
+            System.out.println("Pais no esta en la lista. Filtrado");
         }
-        return ret;
+        System.out.println("La lista de valores a devolver es: "+list.toString());
+        return list;
     }
 
     /*
@@ -147,8 +121,6 @@ public class TwitterAppClient {
 
         while (iter.hasNext()) {
             String next = (String) iter.next();
-            System.out.println("isOnCountryList?: " + next);
-            System.out.println("isEquals: " + next.equals(paisOrigen));
             if (next.equals(paisOrigen)) {
                 result = true;
             }
@@ -156,22 +128,24 @@ public class TwitterAppClient {
         return result;
     }
 
-    private long convertToTimeStamp(JSONObject tweet) {
-        String createdAt = (String) tweet.get("created_at");
-        SimpleDateFormat formatter = new SimpleDateFormat("EEE MMM dd kk:mm:ss z yyyy");
+    private ArrayList<Values> parseHashtags(JSONArray hashtags, String user, String pais,
+            long timestamp) {
+        Iterator iter = hashtags.iterator();
+        ArrayList<Values> list = new ArrayList<>();
+        JSONObject jsonHashtag;
+        String palabra;
+        while (iter.hasNext()) {
+            jsonHashtag = (JSONObject) iter.next();
+            palabra = (String) jsonHashtag.get("text");
+            System.out.println("####Va a meter EN COLA: "
+                    + user + ", " + pais + ", " + palabra + ", " + timestamp);
 
-        Date date = null;
-        try {
-            date = formatter.parse(createdAt);
-        } catch (java.text.ParseException ex) {
-            Logger.getLogger(TwitterSpout.class.getName()).log(Level.SEVERE, null, ex);
+            list.add(new Values(user, pais, palabra, timestamp));
+
+            System.out.println("####Metido en lista la palabra" + palabra);
+
         }
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(date);
-        long time = calendar.getTimeInMillis();
-        long current = System.currentTimeMillis();
-        long diff = current - time; //Time difference in milliseconds
-        return diff / 1000;
+        return list;
     }
 
 }

@@ -14,6 +14,7 @@ import java.util.logging.Level;
 import master.storm.tools.Rankings;
 import master.storm.util.TupleHelpers;
 import org.apache.log4j.Logger;
+import org.json.simple.JSONObject;
 
 /**
  * Esta clase realiza el conteo de tweets que le llegan del WordSpout basado en
@@ -70,7 +71,7 @@ public class TweetCountBolt extends BaseRichBolt {
 
     private void countObjAndAck(Tuple tuple) {
         String country = (String) tuple.getValue(1);
-        String topic = (String) tuple.getValue(2);
+        String topic = ((String) tuple.getValue(2));
         topKRankings.incrementCount(country, topic);
         collector.ack(tuple);
     }
