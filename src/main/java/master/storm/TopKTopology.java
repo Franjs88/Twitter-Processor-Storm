@@ -9,6 +9,8 @@ package master.storm;
 
 import backtype.storm.Config;
 import backtype.storm.topology.TopologyBuilder;
+import master.storm.bolt.TweetCountBolt;
+import master.storm.spout.TwitterSpout;
 import master.storm.util.StormRunner;
 import org.apache.log4j.Logger;
 
@@ -44,15 +46,14 @@ public class TopKTopology {
         return conf;
     }
 
-    // FALTA CONFIGURAR LA VENTANA DESLIZANTE DE 10 MINUTOS!!!
     private void wireTopology(String serverIP, Integer port, String countries)
             throws InterruptedException {
-        String spoutId = "hashtagGenerator";
+        String spoutId = "twitterConsumer";
         String counterId = "counter";
-        String intermediateRankerId = "intermediateRanker";
-        String totalRankerId = "finalRanker";
 
-        // FALTA CONFIGURAR LA VENTANA DESLIZANTE DE 10 MINUTOS!!!
+        builder.setSpout(spoutId, new TwitterSpout(serverIP, port, countries), 5);
+        // 600 segundos emite y escribe fichero
+        builder.setBolt(counterId, new TweetCountBolt(600), 4).shuffleGrouping(spoutId);
     }
 
     public void runLocally() throws InterruptedException {
@@ -65,7 +66,7 @@ public class TopKTopology {
 
     //Args: 1) TopologyName 2)IP Address of TwitterApp 3)Server port 4)CountriesList
     public static void main(String[] args) throws Exception {
-        String topologyName = "slidingWindowCounts";
+        String topologyName = "topKTopology";
         String serverAddress = args[1];
         int port = Integer.parseInt(args[2]);
         String countriesList = args[3];

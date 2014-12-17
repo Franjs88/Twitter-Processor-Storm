@@ -1,107 +1,98 @@
 package master.storm.spout;
 
-import backtype.storm.spout.SpoutOutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.topology.base.BaseRichSpout;
-import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Values;
-import static backtype.storm.utils.Time.LOG;
-import backtype.storm.utils.Utils;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.Socket;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.json.simple.JSONObject;
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 /**
- * Spout que realiza peticiones a la TwitterApp y almacena en una cola los
- * tweets que le llegan y los emite al TweetCountBolt.
  *
  * @author fran
  */
-public class TwitterSpout extends BaseRichSpout {
+public class TwitterAppClient {
 
-    private Integer port = null;
-    private String serverAddress = null;
-    private String countries = null; //"pais1,pais2,pais3"
+    private final String IPAdd;
+    private final Integer port;
+    private final String countries;
+    private Socket socket;
+    private BufferedReader reader;
+    private JSONParser jsonParser;
 
-    //Not class atributes
-    private LinkedBlockingQueue<Values> cola = null;
-    private SpoutOutputCollector _collector;
-    TwitterAppClient client;
-
-    public TwitterSpout(String serverIP, Integer port, String countries) {
+    public TwitterAppClient(String IP, Integer port, String countries) {
+        this.IPAdd = IP;
         this.port = port;
-        this.serverAddress = serverIP;
+        this.jsonParser = new JSONParser();
         this.countries = countries;
     }
 
-    @Override
-    public void open(Map map, TopologyContext tc, SpoutOutputCollector collector) {
-        cola = new LinkedBlockingQueue<Values>();
-        _collector = collector;
-        client = new TwitterAppClient(serverAddress, port, countries);
-
+    public void connect() {
+        try {
+            this.socket = new Socket(IPAdd, port);
+        } catch (IOException ex) {
+            Logger.getLogger(TwitterAppClient.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        InputStreamReader inputStream = null;
+        try {
+            inputStream = new InputStreamReader(socket.getInputStream());
+        } catch (IOException ex) {
+            Logger.getLogger(TwitterAppClient.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        this.reader = new BufferedReader(inputStream);
     }
 
-    @Override
-    public void nextTuple() {
-        readFromTwitter(cola);
-        // If null, we retrieve from the queue
-        Values ret = cola.poll();
-        if (ret == null) {
-            System.out.println("NextTuuple es null, conectamos a TwitterApp");
-            readFromTwitter(cola);
-            Utils.sleep(50);
-        } else {
-            LOG.info("Spout esta emitiendo: ... " + ret.toString());
-            _collector.emit(ret);
+    public void disconnect() {
+        try {
+            socket.close();
+        } catch (IOException ex) {
+            Logger.getLogger(TwitterAppClient.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-    private void readFromTwitter(LinkedBlockingQueue<Values> cola) {
-        client.connect();
-        while (cola.poll() == null) {
-            client.readTweet(cola);
+    // Insert in the queue that nextTuple reads
+    public boolean readTweet(LinkedBlockingQueue<Values> cola) {
+        boolean isNull = true;
+        try {
+            String in;
+            //Leemos mientras lleguen tweets
+            if ((in = reader.readLine()) != null) {
+                JSONObject tweet = (JSONObject) jsonParser.parse(in);
+                List<Values> values = parseTweet(tweet);
+                // If values is empty, we return false
+                if (values != null) {
+                    for (Values v : values) {
+                        System.out.println("Insertando el cola: " + v.toString());
+                        cola.add(v);
+                    }
+                    isNull = false;
+                }
+            }
+        } catch (IOException | ParseException ex) {
+            Logger.getLogger(TwitterAppClient.class.getName()).log(Level.SEVERE, null, ex);
         }
-        client.disconnect();
+        return isNull;
     }
-
-    /*private void readFromTwitter() throws IOException {
-     try {
-     Socket s = new Socket(serverAddress, port);
-     InputStreamReader inputStream = new InputStreamReader(s.getInputStream());
-     BufferedReader reader = new BufferedReader(inputStream);
-     String in;
-
-     //Leemos mientras lleguen tweets
-     while ((in = reader.readLine()) != null) {
-     try {
-     JSONObject tweet = (JSONObject) jsonParser.parse(in);
-     parseTweet(tweet);
-
-     } catch (ParseException e) {
-     LOG.error("Error parsing message from twitter", e);
-     }
-     }
-     } catch (IOException ex) {
-     Logger.getLogger(TwitterSpout.class.getName()).log(Level.SEVERE, null, ex);
-     }
-     }*/
 
     /*
      * Inserts in the queue:"cola", one hashtag for each word with # of a
      * same user tweet.
      */
-    private void parseTweet(JSONObject tweet) {
+    private List<Values> parseTweet(JSONObject tweet) {
+        List<Values> ret = new ArrayList<>();
         JSONObject place = (JSONObject) tweet.get("place");
         System.out.println(
                 "###########Parseando Place... ");
@@ -133,13 +124,8 @@ public class TwitterSpout extends BaseRichSpout {
                     String palabra = (String) iter.next();
                     System.out.println("####Va a meter EN COLA: "
                             + usuario + ", " + paisOrigen + ", " + palabra + ", " + timestamp);
-                    try {
-                        cola.put(new Values(usuario, paisOrigen, palabra, timestamp));
-                        System.out.println("####Metido en cola la palabra" + palabra);
-                    } catch (InterruptedException ex) {
-                        Logger.getLogger(TwitterSpout.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-
+                    ret.add(new Values(usuario, paisOrigen, palabra, timestamp));
+                    System.out.println("####Metido en cola la palabra" + palabra);
                 }
             } else {
                 System.out.println("Pais no esta en la lista. Filtrado");
@@ -147,6 +133,7 @@ public class TwitterSpout extends BaseRichSpout {
         } else {
             System.out.println("Place is null. Filtrado");
         }
+        return ret;
     }
 
     /*
@@ -185,11 +172,6 @@ public class TwitterSpout extends BaseRichSpout {
         long current = System.currentTimeMillis();
         long diff = current - time; //Time difference in milliseconds
         return diff / 1000;
-    }
-
-    @Override
-    public void declareOutputFields(OutputFieldsDeclarer ofd) {
-        ofd.declare(new Fields("usuario", "paisOrigen", "palabra", "timestamp"));
     }
 
 }

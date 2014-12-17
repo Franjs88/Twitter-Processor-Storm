@@ -16,10 +16,11 @@ import java.util.TreeMap;
 public class Rankings {
 
     // Contains the top 3 topics by country
-    private final HashMap<String, CountryMap> rankings;
+    private final HashMap<String, CountryMap> rankings =
+            new HashMap<String, CountryMap>();
 
     public Rankings() {
-        this.rankings = new HashMap<String, CountryMap>();
+        
     }
 
     public HashMap<String, CountryMap> getRankings() {

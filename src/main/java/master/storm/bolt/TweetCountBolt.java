@@ -27,7 +27,7 @@ public class TweetCountBolt extends BaseRichBolt {
     private static final Logger LOG = Logger.getLogger(TweetCountBolt.class);
     private OutputCollector collector;
     // Contains a list of rankings by each country
-    private final Rankings topKRankings = new Rankings();
+    private Rankings topKRankings;
     // The seconds that must pass until the bolt receive a tick tuple
     private final int emitFrequencyInSeconds;
 
@@ -43,6 +43,7 @@ public class TweetCountBolt extends BaseRichBolt {
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         this.collector = collector;
+        topKRankings = new Rankings();
     }
 
     @Override
@@ -51,6 +52,7 @@ public class TweetCountBolt extends BaseRichBolt {
         if (TupleHelpers.isTickTuple(tuple)) {
             LOG.debug("Received tick tuple, writing to file and ending");
             writeTopKToFile();
+            System.out.println("TERMINAMOS ESCRIBIENDO EN FICHERO");
         } else {
             // We continue counting topics
             countObjAndAck(tuple);
@@ -61,7 +63,8 @@ public class TweetCountBolt extends BaseRichBolt {
         try {
             topKRankings.writeOrdered();
         } catch (IOException ex) {
-            java.util.logging.Logger.getLogger(TweetCountBolt.class.getName()).log(Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(TweetCountBolt.class.getName())
+                    .log(Level.SEVERE, "Error al escribir fichero", ex);
         }
     }
 
