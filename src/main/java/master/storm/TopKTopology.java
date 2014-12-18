@@ -22,7 +22,7 @@ import org.apache.log4j.Logger;
 public class TopKTopology {
 
     private static final Logger LOG = Logger.getLogger(TopKTopology.class);
-    private static final int DEFAULT_RUNTIME_IN_SECONDS = 120;
+    private static final int DEFAULT_RUNTIME_IN_SECONDS = 60;
 
     private final TopologyBuilder builder;
     private final String topologyName;
@@ -52,7 +52,7 @@ public class TopKTopology {
 
         builder.setSpout(spoutId, new TwitterSpout(serverIP, port, countries), 1);
         // 600 segundos emite y escribe fichero
-        builder.setBolt(counterId, new TweetCountBolt(100), 1).globalGrouping(spoutId);
+        builder.setBolt(counterId, new TweetCountBolt(30), 1).globalGrouping(spoutId);
     }
 
     public void runLocally() throws InterruptedException {
