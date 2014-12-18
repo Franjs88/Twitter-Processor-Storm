@@ -71,7 +71,7 @@ public class TwitterApp {
                 "lvKI0TOX4fhn0sx3FYlPeQn9fw7ivzTdcj3pZYxnRYfnhdauXY",
                 "231776169-P3JdpJtsOckb3Ts0f35sKh4i0DavYYSj5clfJIGb",
                 "9YBu2QKGasYbkBdQzOv4CVWCiry0O7XqZigHIUyyB6upb");
-        tr.connect("madrid");
+        tr.connect("ronaldo");
         String tweet;
         /////////////////////////////////
 

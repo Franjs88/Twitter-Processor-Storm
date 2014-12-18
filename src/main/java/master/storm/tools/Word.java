@@ -1,7 +1,7 @@
 package master.storm.tools;
 
 /**
- *
+ * 
  * @author fran
  */
 public class Word implements Comparable<Word>{
@@ -24,6 +24,11 @@ public class Word implements Comparable<Word>{
     
     String getTopic () {
         return this.topic;
+    }
+    
+    @Override
+    public String toString() {
+        return "Word: "+"|Topic: "+topic+", Ocurrence: "+ocurrences;
     }
     
 }

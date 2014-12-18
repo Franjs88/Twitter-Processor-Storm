@@ -31,18 +31,22 @@ public class CountryMap {
     public ArrayList<String> getOrderedMap() {
         ArrayList<Word> orderedList = new ArrayList<>();
         for (Map.Entry<String, Word> entry : topics.entrySet()) {
+            System.out.println("Insertando: "+entry.getValue().toString());
             orderedList.add(entry.getValue());
         }
         orderedList.sort(null);
         ArrayList<String> returnList = new ArrayList<>();
+        // We set the number of topics to 3
         Integer index = 2;
         // We test the size of the list before ordering the CountryMap
-        if (index >= returnList.size()) {
-            index = returnList.size() - 1;
+        if (index >= orderedList.size()) {
+            index = orderedList.size() - 1;
         }
         for (int i = 0; i <= index; i++) {
+            System.out.println("Insertando ordenado: "+orderedList.get(i).getTopic());
             returnList.add(orderedList.get(i).getTopic());
         }
+        System.out.println("Lista ordenada es: "+returnList.toString());
         return returnList;
     }
 
@@ -52,6 +56,11 @@ public class CountryMap {
     
     public int size() {
         return this.topics.size();
+    }
+    
+    @Override
+    public String toString() {
+        return "CountryMap: "+topics.entrySet().toString();
     }
 
 }

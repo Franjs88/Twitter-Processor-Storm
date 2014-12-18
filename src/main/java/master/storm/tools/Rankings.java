@@ -29,7 +29,6 @@ public class Rankings {
     public void incrementCount(String country, String topic) {
         //We search for that country and word and update the rank list accordingly
         CountryMap map = this.rankings.get(country);
-        System.out.println("CountryMap vale: "+map);
         if (map == null) {
             map = new CountryMap(new TreeMap<String, Word>());
             rankings.put(country, map);
@@ -40,12 +39,14 @@ public class Rankings {
     }
 
     public void writeOrdered() throws IOException {
+        
         File fout = new File("Fco.JavierSanchezCarmona.log");
         System.out.println(fout.exists());
         BufferedWriter bw = new BufferedWriter(new FileWriter(fout, true));
         bw.write("output-> ");
         for (Map.Entry<String, CountryMap> entry : rankings.entrySet()) {
-            bw.write("[" + entry.getKey() + ", " + entry.getValue().getOrderedMap().toString() + "], ");
+            System.out.println("Escribiendo en fich la Tupla: "+entry.getValue().getOrderedMap());
+            bw.write("[" + entry.getKey() + ", " + entry.getValue().getOrderedMap() + "], ");
         }
         bw.newLine();
         System.out.println("Escrito fichero: " + fout.getAbsolutePath());
