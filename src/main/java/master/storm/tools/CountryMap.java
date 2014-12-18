@@ -6,6 +6,7 @@ import java.util.TreeMap;
 
 /**
  * Esta clase representa un mapa de topics de un pais
+ *
  * @author fran
  */
 public class CountryMap {
@@ -34,14 +35,23 @@ public class CountryMap {
         }
         orderedList.sort(null);
         ArrayList<String> returnList = new ArrayList<>();
-        returnList.add(orderedList.get(0).getTopic());
-        returnList.add(orderedList.get(1).getTopic());
-        returnList.add(orderedList.get(2).getTopic());
+        Integer index = 2;
+        // We test the size of the list before ordering the CountryMap
+        if (index >= returnList.size()) {
+            index = returnList.size() - 1;
+        }
+        for (int i = 0; i <= index; i++) {
+            returnList.add(orderedList.get(i).getTopic());
+        }
         return returnList;
     }
 
     public TreeMap<String, Word> getTopics() {
         return topics;
+    }
+    
+    public int size() {
+        return this.topics.size();
     }
 
 }

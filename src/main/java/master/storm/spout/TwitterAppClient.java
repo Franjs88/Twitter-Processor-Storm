@@ -64,11 +64,9 @@ public class TwitterAppClient {
         ArrayList<Values> values = null;
         try {
             String in;
-            //Leemos
             if ((in = reader.readLine()) != null) {
                 JSONObject tweet = (JSONObject) jsonParser.parse(in);
                 values = parseTweet(tweet);
-                System.out.println("ReadTweet: Values contiene: "+values);
             }
         } catch (IOException | ParseException ex) {
             Logger.getLogger(TwitterAppClient.class.getName()).log(Level.SEVERE, null, ex);
@@ -84,29 +82,22 @@ public class TwitterAppClient {
         ArrayList<Values> list = new ArrayList<>();
         JSONObject user = (JSONObject) tweet.get("user");
         String paisOrigen = (String) user.get("lang");
-        // We only continue if the country is on the list
+        
         if (isOnCountryList(paisOrigen)) {
-            System.out.println("Esta en la lista de paises");
-            // If it is on country list, we get the username
             String usuario = (String) user.get("screen_name");
-
             // We convert to timestamp the tweet
             long timestamp = Long.parseLong((String) tweet.get("timestamp_ms"));
             timestamp = (long) (timestamp * 0.001);
 
+            JSONObject entities = (JSONObject) tweet.get("entities");
             // We filter hashtags.
             // Generates a tuple for each hashtag in the tweet of the same user
-            JSONObject entities = (JSONObject) tweet.get("entities");
             if (entities.containsKey("hashtags")) {
                 JSONArray hashtags = (JSONArray) entities.get("hashtags");
                 // Parse and insert in the queue
                 list = parseHashtags(hashtags, usuario, paisOrigen, timestamp);
             }
-
-        } else {
-            System.out.println("Pais no esta en la lista. Filtrado");
         }
-        System.out.println("La lista de valores a devolver es: "+list.toString());
         return list;
     }
 
@@ -128,24 +119,18 @@ public class TwitterAppClient {
         return result;
     }
 
-    private ArrayList<Values> parseHashtags(JSONArray hashtags, String user, String pais,
-            long timestamp) {
+    private ArrayList<Values> parseHashtags(JSONArray hashtags, String user,
+            String pais, long timestamp) {
         Iterator iter = hashtags.iterator();
         ArrayList<Values> list = new ArrayList<>();
         JSONObject jsonHashtag;
         String palabra;
+        
         while (iter.hasNext()) {
             jsonHashtag = (JSONObject) iter.next();
             palabra = (String) jsonHashtag.get("text");
-            System.out.println("####Va a meter EN COLA: "
-                    + user + ", " + pais + ", " + palabra + ", " + timestamp);
-
             list.add(new Values(user, pais, palabra, timestamp));
-
-            System.out.println("####Metido en lista la palabra" + palabra);
-
         }
         return list;
     }
-
 }

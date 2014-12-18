@@ -48,18 +48,13 @@ public class TwitterSpout extends BaseRichSpout {
             client.connect();
             vList = client.readTweet();
             if (vList != null) {
-                System.out.println("Hemos leido algo: "+vList.toString());
                 cola.addAll(vList);
             }
             client.disconnect();
-            System.out.println("Cola is empty");
         }
-
-        // If null, we retrieve from the queue
+        // If not null, we emit the tuple
         Values ret = cola.poll();
-        if (ret == null) {
-            System.out.println("NextTuuple es null, conectamos a TwitterApp");
-        } else {
+        if (ret != null) {
             System.out.println("Spout esta emitiendo: ... " + ret.toString());
             _collector.emit(ret);
         }
