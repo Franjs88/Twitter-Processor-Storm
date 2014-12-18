@@ -56,7 +56,7 @@ public class TopKTopology {
 
         builder.setSpout(spoutId, new TwitterSpout(serverIP, port, countries), 1);
         // 600 segundos generamos el resultado y escribimos en fichero
-        builder.setBolt(counterId, new TweetCountBolt(600), 1).globalGrouping(spoutId);
+        builder.setBolt(counterId, new TweetCountBolt(30), 1).globalGrouping(spoutId);
     }
     
     public void runLocally() throws InterruptedException {

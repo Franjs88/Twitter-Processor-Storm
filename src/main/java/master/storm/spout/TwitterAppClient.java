@@ -37,13 +37,9 @@ public class TwitterAppClient {
     }
 
     public void connect() {
-        try {
-            this.socket = new Socket(IPAdd, port);
-        } catch (IOException ex) {
-            Logger.getLogger(TwitterAppClient.class.getName()).log(Level.SEVERE, null, ex);
-        }
         InputStreamReader inputStream = null;
         try {
+            this.socket = new Socket(IPAdd, port);
             inputStream = new InputStreamReader(socket.getInputStream());
         } catch (IOException ex) {
             Logger.getLogger(TwitterAppClient.class.getName()).log(Level.SEVERE, null, ex);
@@ -65,14 +61,13 @@ public class TwitterAppClient {
         try {
             String in;
             if ((in = reader.readLine()) != null) {
-                JSONObject tweet = (JSONObject) jsonParser.parse(in);
+                JSONObject tweet;
+                tweet = (JSONObject) jsonParser.parse(in);
                 values = parseTweet(tweet);
-                System.out.println("Parseado tweet con: "+values.toString());
             }
         } catch (IOException | ParseException ex) {
             Logger.getLogger(TwitterAppClient.class.getName()).log(Level.SEVERE, null, ex);
         }
-        System.out.println("readTweet devuelve: "+values.toString());
         return values;
     }
 
@@ -84,7 +79,6 @@ public class TwitterAppClient {
         ArrayList<Values> list = new ArrayList<>();
         JSONObject user = (JSONObject) tweet.get("user");
         String paisOrigen = (String) user.get("lang");
-        
         if (isOnCountryList(paisOrigen)) {
             String usuario = (String) user.get("screen_name");
             // We convert to timestamp the tweet
@@ -96,8 +90,10 @@ public class TwitterAppClient {
             // Generates a tuple for each hashtag in the tweet of the same user
             if (entities.containsKey("hashtags")) {
                 JSONArray hashtags = (JSONArray) entities.get("hashtags");
-                // Parse and insert in the queue
-                list = parseHashtags(hashtags, usuario, paisOrigen, timestamp);
+                if (!hashtags.isEmpty()) {
+                    // Parse and insert in the queue
+                    list = parseHashtags(hashtags, usuario, paisOrigen, timestamp);
+                }
             }
         }
         return list;
@@ -127,7 +123,7 @@ public class TwitterAppClient {
         ArrayList<Values> list = new ArrayList<>();
         JSONObject jsonHashtag;
         String palabra;
-        
+
         while (iter.hasNext()) {
             jsonHashtag = (JSONObject) iter.next();
             palabra = (String) jsonHashtag.get("text");
