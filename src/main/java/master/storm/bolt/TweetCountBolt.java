@@ -51,11 +51,9 @@ public class TweetCountBolt extends BaseRichBolt {
         if (TupleHelpers.isTickTuple(tuple)) {
             LOG.debug("Received tick tuple, 10 minutes passed: writing to file and ending");
             writeTopKToFile();
-            System.out.println("TERMINAMOS ESCRIBIENDO EN FICHERO");
         } else {
             // We continue counting topics
             countObjAndAck(tuple);
-            System.out.println("INCREMENTAMOS RANKING");
         }
     }
 
@@ -64,7 +62,7 @@ public class TweetCountBolt extends BaseRichBolt {
             topKRankings.writeOrdered();
         } catch (IOException ex) {
             java.util.logging.Logger.getLogger(TweetCountBolt.class.getName())
-                    .log(Level.SEVERE, "Error al escribir fichero", ex);
+                    .log(Level.SEVERE, "Error writing file", ex);
         }
     }
 
@@ -77,7 +75,6 @@ public class TweetCountBolt extends BaseRichBolt {
 
     @Override
     public Map<String, Object> getComponentConfiguration() {
-        //Map<String, Object> conf = new HashMap<String, Object>();
         Config conf = new Config();
         conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, emitFrequencyInSeconds);
         return conf;

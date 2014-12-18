@@ -9,6 +9,10 @@ package master.storm;
 
 import backtype.storm.Config;
 import backtype.storm.topology.TopologyBuilder;
+import ch.qos.logback.classic.util.ContextInitializer;
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.Properties;
 import master.storm.bolt.TweetCountBolt;
 import master.storm.spout.TwitterSpout;
 import master.storm.util.StormRunner;
@@ -51,7 +55,7 @@ public class TopKTopology {
         String counterId = "counter";
 
         builder.setSpout(spoutId, new TwitterSpout(serverIP, port, countries), 1);
-        // 600 segundos emite y escribe fichero
+        // 600 segundos generamos el resultado y escribimos en fichero
         builder.setBolt(counterId, new TweetCountBolt(600), 1).globalGrouping(spoutId);
     }
     
@@ -63,20 +67,22 @@ public class TopKTopology {
         StormRunner.runTopologyRemotely(builder.createTopology(), topologyName, topologyConfig);
     }
 
-    //Args: 1) TopologyName 2)IP Address of TwitterApp 3)Server port 4)CountriesList
+    //Args: 1) runMode 2)IP Address of TwitterApp 3)Server port 4)CountriesList
     public static void main(String[] args) throws Exception {
-        String topologyName = "topKTopology";
-        String serverAddress = args[1];
-        int port = Integer.parseInt(args[2]);
-        String countriesList = args[3];
         
-        if (args.length >= 1) {
-            topologyName = args[0];
+        Properties p = new Properties();
+        p.load(new FileInputStream(new File("TopKTopologyParams.property")));
+        for (String key : p.stringPropertyNames()) {
+            
+            System.out.println("key=" + key + ", value=" + p.getProperty(key));
         }
-        boolean runLocally = true;
-        if (args.length >= 2 && args[1].equalsIgnoreCase("remote")) {
-            runLocally = false;
-        }
+        
+        String topologyName = "topKTopology";
+        String serverAddress = p.getProperty("ip_address");
+        int port = Integer.parseInt(p.getProperty("port_number"));
+        String countriesList = p.getProperty("countries");        
+        boolean runLocally = !Boolean.parseBoolean(p.getProperty("run_mode"));
+        
         LOG.info("Topology name: " + topologyName);
         LOG.info("Server IP address: " + serverAddress);
         LOG.info("Server port number: " + port);

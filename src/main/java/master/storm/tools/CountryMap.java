@@ -31,7 +31,6 @@ public class CountryMap {
     public ArrayList<String> getOrderedMap() {
         ArrayList<Word> orderedList = new ArrayList<>();
         for (Map.Entry<String, Word> entry : topics.entrySet()) {
-            System.out.println("Insertando: "+entry.getValue().toString());
             orderedList.add(entry.getValue());
         }
         orderedList.sort(null);
@@ -43,10 +42,8 @@ public class CountryMap {
             index = orderedList.size() - 1;
         }
         for (int i = 0; i <= index; i++) {
-            System.out.println("Insertando ordenado: "+orderedList.get(i).getTopic());
             returnList.add(orderedList.get(i).getTopic());
         }
-        System.out.println("Lista ordenada es: "+returnList.toString());
         return returnList;
     }
 

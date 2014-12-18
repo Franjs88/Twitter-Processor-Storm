@@ -61,16 +61,18 @@ public class TwitterAppClient {
 
     // Insert in the queue that nextTuple reads
     public ArrayList<Values> readTweet() {
-        ArrayList<Values> values = null;
+        ArrayList<Values> values = new ArrayList<>();
         try {
             String in;
             if ((in = reader.readLine()) != null) {
                 JSONObject tweet = (JSONObject) jsonParser.parse(in);
                 values = parseTweet(tweet);
+                System.out.println("Parseado tweet con: "+values.toString());
             }
         } catch (IOException | ParseException ex) {
             Logger.getLogger(TwitterAppClient.class.getName()).log(Level.SEVERE, null, ex);
         }
+        System.out.println("readTweet devuelve: "+values.toString());
         return values;
     }
 

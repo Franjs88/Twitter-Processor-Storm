@@ -6,6 +6,8 @@ import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichSpout;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Values;
+import static backtype.storm.utils.Time.LOG;
+import com.esotericsoftware.minlog.Log;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -48,6 +50,7 @@ public class TwitterSpout extends BaseRichSpout {
             client.connect();
             vList = client.readTweet();
             if (vList != null) {
+                System.out.println("We've read a tweet!"+vList.toString());
                 cola.addAll(vList);
             }
             client.disconnect();
@@ -55,8 +58,8 @@ public class TwitterSpout extends BaseRichSpout {
         // If not null, we emit the tuple
         Values ret = cola.poll();
         if (ret != null) {
-            System.out.println("Spout esta emitiendo: ... " + ret.toString());
             _collector.emit(ret);
+            System.out.println("Emiting tweet to TweetCountBolt");
         }
     }
 

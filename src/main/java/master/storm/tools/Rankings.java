@@ -33,23 +33,19 @@ public class Rankings {
             map = new CountryMap(new TreeMap<String, Word>());
             rankings.put(country, map);
         }
-        System.out.println("Insertamos: "+topic);
         map.insertWord(topic);
-        System.out.println("Mapa = "+map.size());
     }
 
     public void writeOrdered() throws IOException {
         
         File fout = new File("Fco.JavierSanchezCarmona.log");
-        System.out.println(fout.exists());
         BufferedWriter bw = new BufferedWriter(new FileWriter(fout, true));
         bw.write("output-> ");
         for (Map.Entry<String, CountryMap> entry : rankings.entrySet()) {
-            System.out.println("Escribiendo en fich la Tupla: "+entry.getValue().getOrderedMap());
             bw.write("[" + entry.getKey() + ", " + entry.getValue().getOrderedMap() + "], ");
         }
         bw.newLine();
-        System.out.println("Escrito fichero: " + fout.getAbsolutePath());
+        System.out.println("File succesfully written: " + fout.getAbsolutePath());
         bw.close();
     }
 
