@@ -27,7 +27,7 @@ public class TwitterAppClient {
     private final String countries;
     private Socket socket;
     private BufferedReader reader;
-    private JSONParser jsonParser;
+    private final JSONParser jsonParser;
 
     public TwitterAppClient(String IP, Integer port, String countries) {
         this.IPAdd = IP;
@@ -123,7 +123,6 @@ public class TwitterAppClient {
         ArrayList<Values> list = new ArrayList<>();
         JSONObject jsonHashtag;
         String palabra;
-
         while (iter.hasNext()) {
             jsonHashtag = (JSONObject) iter.next();
             palabra = (String) jsonHashtag.get("text");

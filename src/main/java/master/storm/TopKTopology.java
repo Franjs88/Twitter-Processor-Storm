@@ -9,7 +9,6 @@ package master.storm;
 
 import backtype.storm.Config;
 import backtype.storm.topology.TopologyBuilder;
-import ch.qos.logback.classic.util.ContextInitializer;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Properties;
